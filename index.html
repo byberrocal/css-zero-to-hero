@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSS de Cero a Hero</title>
+<meta name="description" content="Juego para practicar CSS: selectores, caja, posicionamiento, flexbox, grid y responsive.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: barra superior + panel de niveles (izq) + zona de juego (der). Marca USJ. */
+:root{
+  --accent:#ff6633; --accent-d:#e0480f; --navy:#000930;
+  --bg:#eef1f6; --surface:#ffffff; --surface-2:#f5f7fb; --line:#dfe3ec;
+  --fg:#1b2231; --muted:#6b7385; --ok:#128a5b; --ok-bg:#e4f6ee;
+  --code-bg:#0d1526; --code-fg:#e6ebf7;
+  --display:"Fredoka",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#080b13; --surface:#121826; --surface-2:#0d1320; --line:#242c3d;
+  --fg:#e7ebf5; --muted:#98a1b6; --ok:#3ecf8e; --ok-bg:#10241c;
+  --code-bg:#0a1120; --code-fg:#e6ebf7; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#080b13; --surface:#121826; --surface-2:#0d1320; --line:#242c3d;
+  --fg:#e7ebf5; --muted:#98a1b6; --ok:#3ecf8e; --ok-bg:#10241c;
+  --code-bg:#0a1120; --code-fg:#e6ebf7; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.45}
+button{font-family:inherit}
+.app{display:grid;grid-template-rows:auto 1fr;height:100%}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:14px;padding:12px 18px;background:var(--surface);
+  border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:20px;color:var(--navy);letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+:root[data-theme="dark"] .brand,@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand{color:#fff}}
+.brand .dot{width:15px;height:15px;border-radius:4px;background:var(--accent);display:inline-block}
+.brand small{font-family:var(--body);font-weight:600;font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.top .sp{flex:1}
+.prog{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.prog .bar{width:130px;height:8px;border-radius:6px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.prog .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.tbtn{border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:9px;
+  padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.tbtn:hover{border-color:var(--accent)}
+
+/* body grid */
+.main{display:grid;grid-template-columns:250px 1fr;min-height:0;overflow:hidden}
+.side{background:var(--surface);border-right:1px solid var(--line);overflow:auto;padding:10px}
+.world{margin-bottom:6px}
+.world>h3{font-family:var(--display);font-size:13.5px;color:var(--fg);margin:12px 8px 6px;display:flex;align-items:center;gap:8px}
+.lv{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:0;background:none;color:var(--fg);
+  padding:7px 9px;border-radius:8px;cursor:pointer;font-size:13.5px}
+.lv:hover{background:var(--surface-2)}
+.lv.active{background:var(--accent);color:#fff;font-weight:600}
+.lv .num{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);flex:none;display:grid;place-items:center;font-size:11px;color:var(--muted)}
+.lv.active .num{border-color:#fff;color:#fff}
+.lv.done .num{background:var(--ok);border-color:var(--ok);color:#fff}
+.lv.done.active .num{background:#fff;color:var(--ok)}
+
+/* play area */
+.play{overflow:auto;padding:20px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.headline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.headline h2{font-family:var(--display);font-weight:700;font-size:22px;margin:0;color:var(--fg)}
+.headline .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-d);
+  background:var(--surface);border:1px solid var(--line);padding:3px 9px;border-radius:20px}
+.desc{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);
+  border-radius:10px;padding:13px 16px;font-size:14.5px}
+.desc code,.hintbox code,.feed code{font-family:var(--mono);background:var(--surface-2);padding:1px 6px;border-radius:5px;font-size:.9em;border:1px solid var(--line)}
+.desc b{color:var(--accent-d)}
+
+.stage{display:grid;grid-template-columns:1fr 1fr;gap:14px;min-width:0}
+.pane{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.pane>header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line);
+  font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.pane>header .ok{color:var(--ok)}
+.frameWrap{padding:10px;display:flex;justify-content:center;align-items:flex-start;background:var(--surface-2);min-height:200px}
+iframe{border:0;background:#fff;width:100%;height:200px;border-radius:6px}
+iframe.narrow{width:360px;max-width:100%}
+.editor{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.editor>header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);
+  font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.editor>header .sel{font-family:var(--mono);text-transform:none;letter-spacing:0;color:var(--accent-d);font-weight:700}
+textarea#code{width:100%;min-height:160px;resize:vertical;border:0;outline:0;padding:14px 16px;
+  font-family:var(--mono);font-size:13.5px;line-height:1.6;background:var(--code-bg);color:var(--code-fg);tab-size:2}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:0;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-d)}
+.btn.ghost{background:var(--surface);color:var(--fg);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.feed{min-height:22px;font-size:14px;font-weight:600}
+.feed.ok{color:var(--ok)}.feed.no{color:var(--accent-d)}
+.hintbox{background:var(--ok-bg);border:1px solid var(--line);border-radius:10px;padding:11px 15px;font-size:14px}
+.hintbox.sol{background:var(--surface-2)}
+.hintbox pre{margin:6px 0 0;font-family:var(--mono);font-size:12.5px;white-space:pre-wrap;color:var(--fg)}
+.foot{color:var(--muted);font-size:12px;text-align:center;padding:6px 0 2px}
+.foot a{color:var(--accent-d)}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--ok);color:#fff;padding:11px 20px;border-radius:30px;font-weight:700;font-size:15px;
+  box-shadow:0 8px 24px rgba(0,0,0,.2);transition:.3s;pointer-events:none;z-index:50}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:820px){
+  .main{grid-template-columns:1fr;overflow:auto}
+  .side{border-right:0;border-bottom:1px solid var(--line);max-height:180px}
+  .stage{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand"><span class="dot"></span>CSS de Cero a Hero <small>Sistemas Web · USJ</small></div>
+    <div class="sp"></div>
+    <div class="prog"><span id="pcount">0 / 0</span><span class="bar"><i id="pbar"></i></span></div>
+    <button class="tbtn" id="theme">◐ Tema</button>
+    <button class="tbtn" id="resetAll">Reiniciar progreso</button>
+  </div>
+  <div class="main">
+    <nav class="side" id="side" aria-label="Niveles"></nav>
+    <section class="play">
+      <div class="headline"><h2 id="lvTitle"></h2><span class="tag" id="lvTag"></span></div>
+      <div class="desc" id="lvDesc"></div>
+      <div class="stage">
+        <div class="pane"><header>🎯 Objetivo</header><div class="frameWrap"><iframe id="goal" title="Objetivo"></iframe></div></div>
+        <div class="pane"><header>Tu resultado <span class="ok" id="okmark" hidden>✓ correcto</span></header><div class="frameWrap"><iframe id="result" title="Tu resultado"></iframe></div></div>
+      </div>
+      <div class="editor">
+        <header>Tu CSS <span class="sel" id="selHint"></span></header>
+        <textarea id="code" spellcheck="false" autocomplete="off"></textarea>
+      </div>
+      <div class="controls">
+        <button class="btn primary" id="next" disabled>Siguiente ▶</button>
+        <button class="btn ghost" id="hintBtn">💡 Pista</button>
+        <button class="btn ghost" id="solBtn">Ver solución</button>
+        <button class="btn ghost" id="resetLv">↺ Reiniciar nivel</button>
+        <span class="feed" id="feed"></span>
+      </div>
+      <div id="hintWrap"></div>
+      <div class="foot">Escribe CSS, mira el resultado en vivo y llega hasta <b>hero</b>. El progreso se guarda en tu navegador.</div>
+    </section>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+// ---------- helpers de test ----------
+const ORANGE="rgb(255, 102, 51)", NAVY="rgb(0, 9, 48)";
+function el(w,s){return w.document.querySelector(s);}
+function all(w,s){return [...w.document.querySelectorAll(s)];}
+function cv(w,s,p){const e=el(w,s);return e?w.getComputedStyle(e)[p]:"";}
+function tracks(w,s){const v=cv(w,s,"gridTemplateColumns");return v&&v!=="none"?v.trim().split(/\s+/):[];}
+const near=(a,b,t=1.5)=>Math.abs(parseFloat(a)-b)<=t;
+
+// ---------- escenas ----------
+const SEL_HTML=`<h1 id="titulo">Sistemas Web</h1>
+<p>La web es un sistema de documentos enlazados.</p>
+<p class="destacado">HTTP es el protocolo que los mueve.</p>
+<ul class="lista"><li>HTML</li><li>CSS</li><li>JavaScript</li></ul>
+<nav class="nav"><a href="#">Inicio</a> · <a href="#">Docs</a></nav>`;
+const SEL_CSS=`h1{font-size:22px;margin:0 0 8px}p{margin:6px 0}a{color:#1a56db}ul{margin:8px 0}`;
+
+const BOX_HTML=`<div class="marco"><div class="caja">.caja</div></div>`;
+const BOX_CSS=`.marco{background:#e7e9ff;display:inline-block;padding:16px;border-radius:8px}
+.caja{background:#ff6633;color:#fff;font-weight:700;display:inline-block;padding:10px 16px}`;
+
+const posC=`.contenedor{position:relative;height:180px;background:#eef1ff;border:2px dashed #9aa6ff;border-radius:10px;overflow:hidden}`;
+const cajaC=`.caja{width:82px;height:52px;background:#ff6633;color:#fff;display:grid;place-items:center;border-radius:8px;font-weight:700}`;
+
+const FLEX_HTML=`<div class="fila"><div class="item">1</div><div class="item">2</div><div class="item">3</div></div>`;
+const FLEX_CSS=`.fila{background:#eef1ff;border:2px dashed #9aa6ff;border-radius:10px;height:150px;padding:8px}
+.item{background:#ff6633;color:#fff;width:56px;height:46px;margin:5px;border-radius:8px;display:grid;place-items:center;font-weight:700}`;
+
+const GRID_HTML=`<div class="rejilla">${[1,2,3,4,5,6].map(n=>`<div class="celda">${n}</div>`).join("")}</div>`;
+const GRID_CSS=`.rejilla{background:#eef1ff;border:2px dashed #9aa6ff;border-radius:10px;padding:8px}
+.celda{background:#ff6633;color:#fff;height:46px;border-radius:8px;display:grid;place-items:center;font-weight:700}`;
+
+const MEDIA_HTML=`<header class="cab">Cabecera</header>
+<div class="fila"><div class="item">A</div><div class="item">B</div><div class="item">C</div></div>
+<aside class="lado">Publicidad</aside>`;
+const MEDIA_CSS=`body{padding:0}.cab{background:#000930;color:#fff;padding:12px;font-weight:700}
+.fila{display:flex;gap:8px;padding:10px}.item{background:#ff6633;color:#fff;flex:1;height:52px;border-radius:8px;display:grid;place-items:center;font-weight:700}
+.lado{background:#e7e9ff;padding:12px;margin:0 10px 10px;border-radius:8px}`;
+
+// ---------- niveles ----------
+const WORLDS=[
+  {id:"sel",name:"Selectores",icon:"🎯"},
+  {id:"box",name:"Modelo de caja",icon:"📦"},
+  {id:"pos",name:"Posicionamiento",icon:"📍"},
+  {id:"flex",name:"Flexbox",icon:"🧺"},
+  {id:"grid",name:"Grid",icon:"▦"},
+  {id:"media",name:"Responsive · @media",icon:"📱"},
+];
+
+const L=[
+// ---- SELECTORES ----
+{w:"sel",sel:"p { … }",html:SEL_HTML,css:SEL_CSS,
+ title:"Todos los párrafos",
+ desc:`Pon <b>todos los párrafos</b> (<code>&lt;p&gt;</code>) en color naranja: <code>color: #ff6633;</code>`,
+ start:"p {\n  \n}",
+ sol:"p { color:#ff6633; }",
+ hint:"El selector de tipo <code>p</code> afecta a TODOS los &lt;p&gt;. Añade <code>color: #ff6633;</code> dentro.",
+ test:w=>{const ps=all(w,"p");return ps.length>0&&ps.every(p=>w.getComputedStyle(p).color===ORANGE);}},
+
+{w:"sel",sel:".destacado { … }",html:SEL_HTML,css:SEL_CSS,
+ title:"Solo una clase",
+ desc:`Pon <b>en negrita</b> únicamente el elemento con <code>class="destacado"</code>. Usa el selector de clase <code>.destacado</code> con <code>font-weight: bold;</code>`,
+ start:".destacado {\n  \n}",
+ sol:".destacado { font-weight:bold; }",
+ hint:"Las clases se seleccionan con un punto: <code>.destacado { … }</code>",
+ test:w=>parseInt(cv(w,".destacado","fontWeight"))>=700},
+
+{w:"sel",sel:"#titulo { … }",html:SEL_HTML,css:SEL_CSS,
+ title:"Un id único",
+ desc:`El título tiene <code>id="titulo"</code>. Hazlo grande (<code>font-size: 40px;</code>) y de color navy (<code>color: #000930;</code>). Los ids se seleccionan con <code>#</code>.`,
+ start:"#titulo {\n  \n}",
+ sol:"#titulo { font-size:40px; color:#000930; }",
+ hint:"<code>#titulo { font-size:40px; color:#000930; }</code>",
+ test:w=>cv(w,"#titulo","fontSize")==="40px"&&cv(w,"#titulo","color")===NAVY},
+
+{w:"sel",sel:".nav a { … }",html:SEL_HTML,css:SEL_CSS,
+ title:"Selector descendiente",
+ desc:`Quita el subrayado SOLO a los enlaces que están <b>dentro</b> de la barra <code>.nav</code>. Usa un espacio: <code>.nav a</code> con <code>text-decoration: none;</code>`,
+ start:".nav a {\n  \n}",
+ sol:".nav a { text-decoration:none; }",
+ hint:"<code>.nav a</code> significa: los &lt;a&gt; que descienden de un elemento con clase nav.",
+ test:w=>{const a=all(w,".nav a");return a.length>0&&a.every(x=>w.getComputedStyle(x).textDecorationLine==="none");}},
+
+{w:"sel",sel:".lista li:nth-child(2) { … }",html:SEL_HTML,css:SEL_CSS,
+ title:"El segundo de la lista",
+ desc:`Pon en naranja (<code>color:#ff6633;</code>) <b>solo el segundo</b> elemento de la lista, sin tocar los demás. Usa <code>li:nth-child(2)</code>.`,
+ start:".lista li:nth-child(2) {\n  \n}",
+ sol:".lista li:nth-child(2){ color:#ff6633; }",
+ hint:"<code>:nth-child(2)</code> apunta al 2º hijo. El 1º y el 3º deben seguir normales.",
+ test:w=>{const li=all(w,".lista li");return li.length>=3&&w.getComputedStyle(li[1]).color===ORANGE&&w.getComputedStyle(li[0]).color!==ORANGE;}},
+
+// ---- MODELO DE CAJA ----
+{w:"box",sel:".caja { … }",html:BOX_HTML,css:BOX_CSS,
+ title:"Relleno (padding)",
+ desc:`Dale a <code>.caja</code> un <b>relleno interior</b> de 24px por todos lados: <code>padding: 24px;</code>`,
+ start:".caja {\n  padding: ;\n}",
+ sol:".caja{ padding:24px; }",
+ hint:"El <code>padding</code> es el espacio DENTRO de la caja, entre el borde y el contenido.",
+ test:w=>["paddingTop","paddingRight","paddingBottom","paddingLeft"].every(p=>cv(w,".caja",p)==="24px")},
+
+{w:"box",sel:".caja { … }",html:BOX_HTML,css:BOX_CSS,
+ title:"Margen (margin)",
+ desc:`Separa la caja de lo que la rodea con un <b>margen exterior</b> de 30px: <code>margin: 30px;</code>`,
+ start:".caja {\n  margin: ;\n}",
+ sol:".caja{ margin:30px; }",
+ hint:"El <code>margin</code> es el espacio FUERA de la caja, empujando a los vecinos.",
+ test:w=>["marginTop","marginRight","marginBottom","marginLeft"].every(p=>cv(w,".caja",p)==="30px")},
+
+{w:"box",sel:".caja { … }",html:BOX_HTML,css:BOX_CSS,
+ title:"Borde",
+ desc:`Ponle un <b>borde</b> de 4px, sólido y navy: <code>border: 4px solid #000930;</code>`,
+ start:".caja {\n  border: ;\n}",
+ sol:".caja{ border:4px solid #000930; }",
+ hint:"<code>border: &lt;grosor&gt; &lt;estilo&gt; &lt;color&gt;;</code> — p.ej. <code>4px solid #000930</code>.",
+ test:w=>cv(w,".caja","borderTopWidth")==="4px"&&cv(w,".caja","borderTopStyle")==="solid"&&cv(w,".caja","borderTopColor")===NAVY},
+
+{w:"box",sel:".caja { … }",html:BOX_HTML,css:BOX_CSS.replace(".caja{background:#ff6633;color:#fff;font-weight:700;display:inline-block;padding:10px 16px}",".caja{background:#ff6633;color:#fff;font-weight:700;display:inline-block;padding:20px}"),
+ title:"box-sizing: la caja no crece",
+ desc:`La caja tiene <code>padding:20px</code>. Ponle <code>width: 220px;</code> y haz que el padding <b>no</b> la agrande, con <code>box-sizing: border-box;</code>. El ancho final debe ser exactamente 220px.`,
+ start:".caja {\n  width: 220px;\n  \n}",
+ sol:".caja{ width:220px; box-sizing:border-box; }",
+ hint:"Con <code>box-sizing: border-box;</code> el ancho incluye el padding y el borde, así que 220 son 220.",
+ test:w=>{const e=el(w,".caja");return cv(w,".caja","boxSizing")==="border-box"&&Math.abs(e.offsetWidth-220)<=1;}},
+
+{w:"box",sel:".caja { … }",html:BOX_HTML,css:BOX_CSS,
+ title:"Esquinas redondeadas",
+ desc:`Redondea las esquinas de la caja 14px: <code>border-radius: 14px;</code>`,
+ start:".caja {\n  border-radius: ;\n}",
+ sol:".caja{ border-radius:14px; }",
+ hint:"<code>border-radius</code> curva las esquinas. Prueba distintos valores.",
+ test:w=>cv(w,".caja","borderTopLeftRadius")==="14px"},
+
+// ---- POSICIONAMIENTO ----
+{w:"pos",sel:".caja { … }",html:`<div class="contenedor"><div class="caja">muéveme</div></div>`,css:posC+cajaC,
+ title:"position: relative",
+ desc:`Empuja la caja <b>40px desde arriba</b> y <b>60px desde la izquierda</b>, sin sacarla del flujo. Necesitas <code>position: relative;</code> más <code>top: 40px;</code> y <code>left: 60px;</code>`,
+ start:".caja {\n  position: relative;\n  \n}",
+ sol:".caja{ position:relative; top:40px; left:60px; }",
+ hint:"<code>relative</code> mueve el elemento respecto a su sitio original. <code>top</code> y <code>left</code> lo desplazan.",
+ test:w=>cv(w,".caja","position")==="relative"&&cv(w,".caja","top")==="40px"&&cv(w,".caja","left")==="60px"},
+
+{w:"pos",sel:".insignia { … }",html:`<div class="contenedor"><p style="padding:10px">Tarjeta de producto</p><span class="insignia">Nuevo</span></div>`,
+ css:posC+`.insignia{background:#000930;color:#fff;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}`,
+ title:"position: absolute (una esquina)",
+ desc:`Ancla la <code>.insignia</code> en la <b>esquina superior derecha</b> del contenedor. El contenedor ya es <code>position: relative</code>; usa <code>position: absolute;</code> con <code>top: 0;</code> y <code>right: 0;</code>`,
+ start:".insignia {\n  position: absolute;\n  \n}",
+ sol:".insignia{ position:absolute; top:0; right:0; }",
+ hint:"<code>absolute</code> se ancla al ancestro posicionado más cercano. Aquí, el contenedor.",
+ test:w=>cv(w,".insignia","position")==="absolute"&&cv(w,".insignia","top")==="0px"&&cv(w,".insignia","right")==="0px"},
+
+{w:"pos",sel:".flotante { … }",html:`<div class="contenedor"><p style="padding:10px">Contenido…</p><button class="flotante">↑ Arriba</button></div>`,
+ css:posC+`.flotante{background:#ff6633;color:#fff;border:0;padding:10px 14px;border-radius:10px;font-weight:700}`,
+ title:"position: fixed",
+ desc:`Fija el botón <b>abajo a la derecha</b> de la ventana con <code>position: fixed;</code>, <code>bottom: 20px;</code> y <code>right: 20px;</code> (el típico botón "volver arriba").`,
+ start:".flotante {\n  position: fixed;\n  \n}",
+ sol:".flotante{ position:fixed; bottom:20px; right:20px; }",
+ hint:"<code>fixed</code> se pega a la ventana y no se mueve al hacer scroll.",
+ test:w=>cv(w,".flotante","position")==="fixed"&&cv(w,".flotante","bottom")==="20px"&&cv(w,".flotante","right")==="20px"},
+
+{w:"pos",sel:".azul { … }",html:`<div class="contenedor"><div class="roja">roja</div><div class="azul">azul</div></div>`,
+ css:posC+`.roja,.azul{position:absolute;width:100px;height:100px;color:#fff;display:grid;place-items:center;border-radius:10px;font-weight:700}
+.roja{background:#e23b3b;top:20px;left:20px}.azul{background:#2f6bff;top:45px;left:70px}`,
+ title:"z-index: quién va encima",
+ desc:`Las dos cajas se solapan. Haz que la <b>azul quede por encima</b> de la roja con <code>z-index: 2;</code> (ambas son <code>position: absolute</code>).`,
+ start:".azul {\n  z-index: ;\n}",
+ sol:".azul{ z-index:2; }",
+ hint:"<code>z-index</code> mayor = más cerca de ti. Solo funciona en elementos posicionados.",
+ test:w=>{const z=parseInt(cv(w,".azul","zIndex"));return !isNaN(z)&&z>=1;}},
+
+{w:"pos",sel:".barra { … }",html:`<div class="contenedor" style="height:180px;overflow:auto"><div class="barra">barra</div><div style="height:400px;padding:10px">mucho contenido para hacer scroll…</div></div>`,
+ css:posC+`.barra{background:#000930;color:#fff;padding:10px;font-weight:700;border-radius:8px}`,
+ title:"position: sticky",
+ desc:`Haz que la barra se quede <b>pegada arriba</b> al hacer scroll dentro del contenedor: <code>position: sticky;</code> y <code>top: 0;</code>`,
+ start:".barra {\n  position: sticky;\n  \n}",
+ sol:".barra{ position:sticky; top:0; }",
+ hint:"<code>sticky</code> es normal hasta que toca el borde (<code>top:0</code>) y entonces se queda fija.",
+ test:w=>cv(w,".barra","position")==="sticky"&&cv(w,".barra","top")==="0px"},
+
+// ---- FLEXBOX ----
+{w:"flex",sel:".fila { … }",html:FLEX_HTML,css:FLEX_CSS,
+ title:"display: flex",
+ desc:`Por defecto los items se apilan. Ponlos <b>en fila</b> con <code>display: flex;</code> en el contenedor <code>.fila</code>.`,
+ start:".fila {\n  \n}",
+ sol:".fila{ display:flex; }",
+ hint:"Flexbox se activa en el PADRE con <code>display: flex;</code>. Los hijos se colocan en fila.",
+ test:w=>cv(w,".fila","display")==="flex"},
+
+{w:"flex",sel:".fila { … }",html:FLEX_HTML,css:FLEX_CSS,
+ title:"justify-content: al final",
+ desc:`Manda los items al <b>final</b> (derecha) del contenedor con <code>display: flex;</code> y <code>justify-content: flex-end;</code>`,
+ start:".fila {\n  display: flex;\n  \n}",
+ sol:".fila{ display:flex; justify-content:flex-end; }",
+ hint:"<code>justify-content</code> reparte a lo largo de la fila. Prueba <code>flex-end</code>.",
+ test:w=>cv(w,".fila","display")==="flex"&&cv(w,".fila","justifyContent")==="flex-end"},
+
+{w:"flex",sel:".fila { … }",html:FLEX_HTML,css:FLEX_CSS,
+ title:"justify-content: espacio entre",
+ desc:`Reparte el <b>espacio sobrante entre</b> los items (uno a la izquierda, otro al centro, otro a la derecha) con <code>justify-content: space-between;</code>`,
+ start:".fila {\n  display: flex;\n  \n}",
+ sol:".fila{ display:flex; justify-content:space-between; }",
+ hint:"<code>space-between</code> pega el primero al inicio, el último al final, y reparte el hueco.",
+ test:w=>cv(w,".fila","display")==="flex"&&cv(w,".fila","justifyContent")==="space-between"},
+
+{w:"flex",sel:".fila { … }",html:FLEX_HTML,css:FLEX_CSS,
+ title:"Centrado perfecto",
+ desc:`Centra los items <b>horizontal y verticalmente</b> con <code>justify-content: center;</code> y <code>align-items: center;</code>. (El truco que todo el mundo busca en Google.)`,
+ start:".fila {\n  display: flex;\n  \n}",
+ sol:".fila{ display:flex; justify-content:center; align-items:center; }",
+ hint:"<code>justify-content</code> centra en horizontal; <code>align-items</code> en vertical.",
+ test:w=>cv(w,".fila","display")==="flex"&&cv(w,".fila","justifyContent")==="center"&&cv(w,".fila","alignItems")==="center"},
+
+{w:"flex",sel:".fila { … }",html:FLEX_HTML,css:FLEX_CSS,
+ title:"flex-direction: columna",
+ desc:`Apila los items <b>en columna</b> (uno debajo de otro) con <code>display:flex;</code> y <code>flex-direction: column;</code>`,
+ start:".fila {\n  display: flex;\n  \n}",
+ sol:".fila{ display:flex; flex-direction:column; }",
+ hint:"<code>flex-direction: column</code> cambia el eje principal a vertical.",
+ test:w=>cv(w,".fila","display")==="flex"&&cv(w,".fila","flexDirection")==="column"},
+
+// ---- GRID ----
+{w:"grid",sel:".rejilla { … }",html:GRID_HTML,css:GRID_CSS,
+ title:"Tres columnas iguales",
+ desc:`Convierte <code>.rejilla</code> en una cuadrícula de <b>3 columnas iguales</b>: <code>display: grid;</code> y <code>grid-template-columns: repeat(3, 1fr);</code>`,
+ start:".rejilla {\n  display: grid;\n  \n}",
+ sol:".rejilla{ display:grid; grid-template-columns:repeat(3,1fr); }",
+ hint:"<code>1fr</code> es \"una fracción\" del espacio. <code>repeat(3,1fr)</code> = tres columnas iguales.",
+ test:w=>cv(w,".rejilla","display")==="grid"&&tracks(w,".rejilla").length===3},
+
+{w:"grid",sel:".rejilla { … }",html:GRID_HTML,css:GRID_CSS,
+ title:"Separación (gap)",
+ desc:`Sobre la cuadrícula de 3 columnas, separa las celdas 12px con <code>gap: 12px;</code>`,
+ start:".rejilla {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  \n}",
+ sol:".rejilla{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }",
+ hint:"<code>gap</code> pone espacio entre filas y columnas de la cuadrícula.",
+ test:w=>cv(w,".rejilla","display")==="grid"&&tracks(w,".rejilla").length===3&&near(cv(w,".rejilla","columnGap"),12)},
+
+{w:"grid",sel:".rejilla { … }",html:GRID_HTML,css:GRID_CSS,
+ title:"Barra lateral + contenido",
+ desc:`Crea dos columnas: una <b>lateral fija de 200px</b> y el resto flexible. Usa <code>grid-template-columns: 200px 1fr;</code>`,
+ start:".rejilla {\n  display: grid;\n  \n}",
+ sol:".rejilla{ display:grid; grid-template-columns:200px 1fr; }",
+ hint:"Puedes mezclar unidades: <code>200px 1fr</code> = fija + flexible.",
+ test:w=>{const t=tracks(w,".rejilla");return cv(w,".rejilla","display")==="grid"&&t.length===2&&near(t[0],200,2);}},
+
+{w:"grid",sel:".rejilla { … }",html:GRID_HTML,css:GRID_CSS,
+ title:"Galería responsive (sin media queries)",
+ desc:`Haz una galería que meta <b>tantas columnas como quepan</b>, cada una mínimo 100px: <code>grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));</code>`,
+ start:".rejilla {\n  display: grid;\n  \n}",
+ sol:".rejilla{ display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); }",
+ hint:"<code>auto-fill</code> + <code>minmax</code> ajusta el nº de columnas al ancho, sin media queries.",
+ test:w=>cv(w,".rejilla","display")==="grid"&&tracks(w,".rejilla").length>=3},
+
+// ---- MEDIA / RESPONSIVE ----
+{w:"media",narrow:true,sel:"@media (max-width:600px){ … }",html:MEDIA_HTML,css:MEDIA_CSS,
+ title:"Tu primera media query",
+ desc:`La vista mide 360px de ancho (móvil). Cuando la pantalla sea estrecha, pon el <b>fondo del body en naranja</b>. Rellena dentro de la media query.`,
+ start:"@media (max-width: 600px) {\n  body {\n    \n  }\n}",
+ sol:"@media (max-width:600px){ body{ background:#ff6633; } }",
+ hint:"Dentro de <code>@media (max-width:600px){ }</code> pon <code>body{ background:#ff6633; }</code>.",
+ test:w=>w.getComputedStyle(w.document.body).backgroundColor===ORANGE},
+
+{w:"media",narrow:true,sel:"@media (max-width:600px){ … }",html:MEDIA_HTML,css:MEDIA_CSS,
+ title:"Apilar en móvil",
+ desc:`En móvil, la fila de items ocupa demasiado. Haz que <code>.fila</code> se apile <b>en columna</b> cuando la pantalla sea estrecha.`,
+ start:"@media (max-width: 600px) {\n  .fila {\n    \n  }\n}",
+ sol:"@media (max-width:600px){ .fila{ flex-direction:column; } }",
+ hint:"Dentro de la media query: <code>.fila{ flex-direction:column; }</code>",
+ test:w=>cv(w,".fila","flexDirection")==="column"},
+
+{w:"media",narrow:true,sel:"@media (max-width:600px){ … }",html:MEDIA_HTML,css:MEDIA_CSS,
+ title:"Ocultar lo secundario",
+ desc:`En pantallas estrechas, <b>oculta la publicidad</b> lateral (<code>.lado</code>) con <code>display: none;</code> dentro de la media query.`,
+ start:"@media (max-width: 600px) {\n  .lado {\n    \n  }\n}",
+ sol:"@media (max-width:600px){ .lado{ display:none; } }",
+ hint:"<code>display:none</code> quita el elemento por completo en móvil.",
+ test:w=>cv(w,".lado","display")==="none"},
+];
+
+// asigna ids e índices por mundo
+L.forEach((lv,i)=>{lv.id=lv.w+"-"+i;});
+
+// ---------- estado ----------
+const KEY="css0toheroV1";
+let solved=new Set(), drafts={}, cur=0;
+try{const s=JSON.parse(localStorage.getItem(KEY)||"{}");solved=new Set(s.solved||[]);drafts=s.drafts||{};cur=s.cur||0;}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({solved:[...solved],drafts,cur}));}catch(e){}}
+
+// ---------- DOM ----------
+const $=id=>document.getElementById(id);
+const side=$("side"),code=$("code"),goal=$("goal"),result=$("result");
+const feed=$("feed"),nextBtn=$("next"),okmark=$("okmark"),hintWrap=$("hintWrap");
+
+function buildSide(){
+  side.innerHTML="";
+  WORLDS.forEach(wd=>{
+    const box=document.createElement("div");box.className="world";
+    const h=document.createElement("h3");h.innerHTML=`<span>${wd.icon}</span> ${wd.name}`;box.appendChild(h);
+    L.forEach((lv,i)=>{if(lv.w!==wd.id)return;
+      const b=document.createElement("button");b.className="lv";b.dataset.i=i;
+      b.innerHTML=`<span class="num">${solved.has(lv.id)?"✓":""}</span><span>${lv.title}</span>`;
+      b.onclick=()=>load(i);box.appendChild(b);
+    });
+    side.appendChild(box);
+  });
+  refreshSide();
+}
+function refreshSide(){
+  [...side.querySelectorAll(".lv")].forEach(b=>{
+    const i=+b.dataset.i,lv=L[i];
+    b.classList.toggle("active",i===cur);
+    b.classList.toggle("done",solved.has(lv.id));
+    b.querySelector(".num").textContent=solved.has(lv.id)?"✓":"";
+  });
+  const done=[...solved].filter(id=>L.some(l=>l.id===id)).length;
+  $("pcount").textContent=`${done} / ${L.length}`;
+  $("pbar").style.width=(done/L.length*100)+"%";
+}
+
+function docFor(lv,extra){
+  return `<!doctype html><meta charset=utf-8><style>*{box-sizing:content-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:14px;color:#14161c;background:#fff;line-height:1.4}${lv.css}${extra||""}</style>${lv.html}`;
+}
+let testTimer=null;
+function render(){
+  const lv=L[cur];
+  goal.className=result.className=lv.narrow?"narrow":"";
+  goal.srcdoc=docFor(lv,lv.sol);
+  const css=code.value;
+  result.onload=()=>runTest(lv);
+  result.srcdoc=docFor(lv,css);
+}
+function runTest(lv){
+  let pass=false;
+  try{pass=!!lv.test(result.contentWindow);}catch(e){pass=false;}
+  if(pass){
+    feed.textContent="¡Correcto! 🎉";feed.className="feed ok";okmark.hidden=false;
+    nextBtn.disabled=false;
+    if(!solved.has(lv.id)){solved.add(lv.id);save();refreshSide();toast("¡Nivel superado! 🎉");}
+  }else{
+    feed.textContent=code.value.trim()?"Aún no… sigue probando.":"";feed.className="feed no";
+    okmark.hidden=true;nextBtn.disabled=!solved.has(lv.id);
+  }
+}
+function load(i){
+  cur=Math.max(0,Math.min(L.length-1,i));save();
+  const lv=L[cur];
+  $("lvTitle").textContent=lv.title;
+  $("lvTag").textContent=WORLDS.find(w=>w.id===lv.w).name;
+  $("lvDesc").innerHTML=lv.desc;
+  $("selHint").textContent=lv.sel||"";
+  code.value=(drafts[lv.id]!=null?drafts[lv.id]:lv.start);
+  feed.textContent="";okmark.hidden=true;hintWrap.innerHTML="";
+  nextBtn.disabled=!solved.has(lv.id);
+  refreshSide();render();
+}
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1600);}
+
+// editar
+code.addEventListener("input",()=>{
+  drafts[L[cur].id]=code.value;save();
+  clearTimeout(testTimer);testTimer=setTimeout(render,220);
+});
+code.addEventListener("keydown",e=>{
+  if(e.key==="Tab"){e.preventDefault();const s=code.selectionStart,en=code.selectionEnd;
+    code.value=code.value.slice(0,s)+"  "+code.value.slice(en);code.selectionStart=code.selectionEnd=s+2;
+    code.dispatchEvent(new Event("input"));}
+});
+// botones
+nextBtn.onclick=()=>{if(cur<L.length-1)load(cur+1);};
+$("hintBtn").onclick=()=>{hintWrap.innerHTML=`<div class="hintbox">💡 ${L[cur].hint}</div>`;};
+$("solBtn").onclick=()=>{hintWrap.innerHTML=`<div class="hintbox sol"><b>Solución</b><pre>${L[cur].sol.replace(/</g,"&lt;")}</pre></div>`;};
+$("resetLv").onclick=()=>{delete drafts[L[cur].id];save();code.value=L[cur].start;code.dispatchEvent(new Event("input"));hintWrap.innerHTML="";};
+$("resetAll").onclick=()=>{solved=new Set();drafts={};cur=0;save();buildSide();load(0);toast("Progreso reiniciado");};
+// tema
+const root=document.documentElement;
+try{const th=localStorage.getItem("css0toheroTheme");if(th)root.setAttribute("data-theme",th);}catch(e){}
+$("theme").onclick=()=>{const d=root.getAttribute("data-theme")==="dark"||(!root.getAttribute("data-theme")&&matchMedia("(prefers-color-scheme:dark)").matches);
+  const n=d?"light":"dark";root.setAttribute("data-theme",n);try{localStorage.setItem("css0toheroTheme",n);}catch(e){}};
+
+buildSide();load(cur);
+</script>
+</body>
+</html>
